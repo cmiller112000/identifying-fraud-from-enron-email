@@ -1,0 +1,205 @@
+Items to include in submission:
+Code/Classifier
+When making your classifier, you will create three pickle files (my_dataset.pkl,
+ my_classifier.pkl, my_feature_list.pkl). The project evaluator will test these
+using the tester.py script. You are encouraged to use this script before 
+submitting to gauge if your performance is good enough. You should also include 
+your modified poi_id.py file in case of any issues with running your code or to
+ verify what is reported in your question responses (see next paragraph).
+ 
+Documentation of Your Work
+Document the work you've done by answering (in about a paragraph each) the 
+questions found here. You can write your answers in a PDF, Word document, text 
+file, or similar format. Include this document as part of your submission to the
+email address above.
+
+Text File Listing Your References
+A list of Web sites, books, forums, blog posts, github repositories etc. that 
+you referred to or used in this submission (add N/A if you did not use such 
+resources). Please carefully read the following statement and include it in your
+document “I hereby confirm that this submission is my work. I have cited above 
+the origins of any parts of the submission that were taken from Websites, books,
+forums, blog posts, github repositories, etc.
+Good Luck!
+
+1. Goals
+The purpose of this project is to use Machine Learning techniques and
+algorithms to attempt to identify key 'Persons of Interest' (POI) in the Enron 
+Collapse and subsequent financial fraud scandal.  The dataset provided contains
+key financial information for key personal involved and not involved in
+the scandal and fraud.  There are only 145 observations of which there 
+are only 18 POIs, and only 20 non-text based features.  Many of the observations
+have missing data and this is problematic because it further reduces the data
+needed to find important relationships and it also further reduces the number of
+samples we have to train and test with.  To add to that problem, the actual 
+number of POIs is small compared to the total number of observations, so many 
+algorithms tested skewed to the 'no-match' classification.
+
+In addition to the financial data, I also have email messages from many
+people that I hope will contribute key information to aid in identifying POI. 
+From this data, I hope to be able to identify some key words that may indicate
+POI associations, such as references to Arther (sic) Anderson (a key company in 
+covering up the fraud in the aftermath) or of stock trading transactions.  The 
+key players at Enron also had close ties to the Bush administration, so many of
+the keywords I scanned for also included Bush and Cheney, etc.  From this list,
+I used the text processing vectorizing lesson to scan all the emails and count 
+the number of keyword references from each persons email.  This 'keyword_count'
+feature was added to the list of features I evaluated.  The full list keywords 
+I scanned email for are:
+
+    special_keywords = ["arther", "anderson", "stock", "fraud", "california", 
+    "power", "grid", "sec", "president", "bush", "prosecutor", "cheney", 
+    "bushcheney","jail","prison","indicted","risk"]
+ 
+**Note: I know realize the misspelling of 'arthur' however did not feel the 
+difference would be significant enough to warrant the lengthy runtime to 
+recreate the keyword_count lists.
+
+Originally I had used R to create a special version of the 'final_project_dataset'
+file with financial outliers removed.  Until it dawned on me that doing so 
+removed at least 2 of the most important POI observations in particular.  So
+instead of removing outliers, I used scaling instead.  I still removed the bad
+'total' outlier that was picked up as data and identified early in the lessons.
+
+
+
+2. Feature Analysis and Selection:
+
+I performed extensive analysis of the data using other tools than the python
+scripting.  I used R to assess the data content, NA value counts, etc.  I also
+used the Weka tool, which has a very nice interactive GUI to help visualize 
+the data and relationships between features.  These functions helped me narrow
+down features I was interested in evaluating by filtering out many features that
+only had a few data points.  I also used PCA analysis, both in my python script
+but also in Weka as part of my early data analysis process.  This also helped
+identify features that to look at.  
+
+The other key area to look at was the email itself, but that was massive in size.
+It was also impossible to really evaluate manually.  I figured my best option in
+using this data would be to try and come up with a set of 'keywords' associated
+with the Enron scandal that might have been referred to in some emails.  So I
+decided to scan all the email by person, count any keyword references encountered
+and associate that count with the person.  This was then brought in and tied
+to the data_dict structure in the poi_id.py script.
+
+After analyzing the input data set and creating the new 'keyword_count' feature
+I decided on running tests against 2 types of features sets.  The financial
+based features, which I scaled using the MinMaxScaler function due to the high
+financial numbers particularly associated with Kenneth Lay. 
+	financial_features_list = ["salary","bonus","total_payments"]
+
+And the email based features associated most with POI attributes which I 
+used as is and added in my keyword_count feature:
+	email_features_list = ["from_this_person_to_poi","from_poi_to_this_person",
+	"keyword_count"]
+	
+From these feature sets, I ran PCA analysis to further refine the feature
+set to only those features found with high contribution to the total.  That then
+excluded the 'salary' feature from the financial set.  For the email set, no
+new features were excluded.
+
+
+3 & 4. Algorithm Selection and Parameter Tuning
+
+Once my chosen features were known, I ran several machine learning algorithms
+including KMeans Clustering, Support Vector Machines, Naive Bayes, Decision 
+Trees, and KNearestNeighbors, all with varying parameter settings where available.
+
+I left the 'most promising' in my poi_id.py code for evaluation review.  Most of
+the algorithms either did not meet the goal of precision/recall > 0.3 or they 
+were skewed in favor of the non-POI classification due to the skewness and 
+limited observations in the data set. I let the 'best' of the 'best' get 
+selected as my final classifier based on using the test_classifier from 
+tester.py accuracy reporting.  I slightly modified the tester.py function to 
+return its version of calculated accuracy, precision, recall, f1 and f2 values. 
+During experimenting with the various algorithms and parameters, the Decision 
+Trees, especially when run using the entropy criterion seemed to be the most 
+stable and were running right at the 0.3 borderline goal, but not consistently
+over the goal.
+
+The 'Best' of the 'Best' algorithm selected for final submission was the Support
+Vector Machine algorithm with the default rbf kernel run against the email based
+feature set.  I was about to give up on the SVM algorithm until I split up the 
+features into 2 list types and started playing with the class_weight and gamma 
+settings.  It turned out this was the best overall algorithm and stresses the
+importance of experimenting with different algorithms and different settings. 
+
+The parameters tuned in this algorithm were 'gamma' and class_weight, the best 
+of which were gamma=0.01 and class_weight={1: 4}.  For gamma I tried several 
+values and tested values in the range of 0.01 - 0.006, with 0.01 seeming to 
+perform the best.  I did adjust the more common 'C' value of the SVC algorithm
+but it really did not impact the outcome much at all.  In fact before I decided
+to break the feature sets up between financial and email based, the SVC algorithm
+though scoring a seemingly high accuracy, could not determine valid precision
+or recall values due to the skew towards non-POI predictions.
+
+To see if my added 'keyword_count' feature added or detracted from the 
+algorithm, I ran with and without it to see any variance.  The results below 
+show a very slight difference that could very well be accounted for simply in 
+the variability of the cross validation functions, so my guess would be that it
+neither added what I had hoped, nor detracts from the result.
+
+# of observations:  146
+features used:  ['poi', 'from_this_person_to_poi', 'from_poi_to_this_person', 
+'keyword_count']
+
+SVC(C=1.0, cache_size=200, class_weight={1: 4}, coef0=0.0, degree=3,
+  gamma=0.01, kernel='rbf', max_iter=-1, probability=False,
+  random_state=None, shrinking=True, tol=0.001, verbose=False)
+	Accuracy: 0.71078	Precision: 0.35663	Recall: 0.37500	F1: 0.36559	
+		F2: 0.37118
+	Total predictions: 9000	True positives:  750	False positives: 1353	
+		False negatives: 1250	True negatives: 5647
+
+
+# of observations:  146
+features used:  ['poi', 'from_this_person_to_poi', 'from_poi_to_this_person']
+SVC(C=1.0, cache_size=200, class_weight={1: 4}, coef0=0.0, degree=3,
+  gamma=0.01, kernel='rbf', max_iter=-1, probability=False,
+  random_state=None, shrinking=True, tol=0.001, verbose=False)
+	Accuracy: 0.71000	Precision: 0.35627	Recall: 0.37800	F1: 0.36681	
+		F2: 0.37344
+	Total predictions: 9000	True positives:  756	False positives: 1366	
+		False negatives: 1244	True negatives: 5634
+
+
+5. Validation:
+
+I used the cross_validation.train_test_split function to split my data set
+into training and testing sets with a test_size setting of 0.30.  Due to the low
+number of total observations, this really did not leave a great deal of data to
+work with for either training or accurate testing, and those numbers were
+reflected in the scoring results I was getting from the typical scikit-learn
+metrics functions.  Very few gave me consistent results with precision and 
+recall values above the goal of 0.30.  I therefore incorporated the newest 
+version of the tester.py script and made a small enhancement to return metrics
+from it.  Based on its more thorough cross-validation processing with 1000 folds,
+it proved more reliable from run to run.
+
+6. Evaluation Metrics
+
+The goal of machine learning is to maximize accuracy without overfitting your 
+training data such that any comparable accuracy on your testing set can be shown
+to be due to actual learning from the data.  It is also important that the 
+accuracy not be incorrectly interpretted due to skewedness of the label classes.  
+In this case that is exactly what happened with early experiments with the SVM 
+algorithm against the financial data features.  Accuracy measured as 
+((TP + TN) / Total Observations) was high, but no real POI targets were being 
+guessed correctly.  That is why the precision and recall metrics are as 
+important as accuracy.  Precision (TP / (TP + FP)) is a measure of exactness or 
+quality, while Recall (TP / (TP + FN)) is a measure of completeness or quantity.
+  
+For my final algorithm, the final evaluation metrics were:
+
+Accuracy:	71%
+Precision:	35.7%
+Recall:		37.5%
+
+While the accuracy was not extremely high, 71% is still pretty good given the 
+low number of observations and high missing data rates.  Anything over 50% is
+certainly better than chance.  The tester.py which runs the learning 1000 times 
+against new cross sections of training vs testing data sets consistently was
+hitting these averages, so that also suggests, it is consistently better than
+chance as well.  The high rates on both Precision and Recall, also suggest that
+the quality and the quantity of the correctness was consistently over our goal
+and that both correctness metrics are well balanced.
