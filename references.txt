@@ -1,0 +1,4 @@
+http://udacity.com - Data Nanodegree classes and forums
+http://scikit-learn.org - many searches and documentation references
+http://stackoverflow.com - many searches - both for python and scikit usage
+http://en.wikipedia.org/wiki/Precision_and_recall
